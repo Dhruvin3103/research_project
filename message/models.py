@@ -9,5 +9,5 @@ class UserMessage(models.Model):
     
     
     def __str__(self) -> str:
-        return  self.id +str(self.user) + str(self.is_stressed())
+        return  str(self.id) + " "+str(self.user)
     
