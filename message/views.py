@@ -14,7 +14,6 @@ class UserMessageAPI(ListCreateAPIView):
         try:
             user_messages = self.get_queryset()
             serializer = UserMessageSerializer(user_messages, many=True)
-            
             return Response({
                 'message': 'success',
                 'data': serializer.data,
@@ -29,8 +28,6 @@ class UserMessageAPI(ListCreateAPIView):
     def post(self,request):
         
         try:
-            print(request.user)
-            
             serializer = UserMessageSerializer(data=request.data,context={'user': request.user})
             if serializer.is_valid():
                 serializer.save()
