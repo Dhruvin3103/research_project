@@ -29,7 +29,9 @@ class UserMessageAPI(ListCreateAPIView):
     def post(self,request):
         
         try:
-            serializer = UserMessageSerializer(data=request.data)
+            print(request.user)
+            
+            serializer = UserMessageSerializer(data=request.data,context={'user': request.user})
             if serializer.is_valid():
                 serializer.save()
                 return Response({

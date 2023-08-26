@@ -5,7 +5,7 @@ from user.models import User
 class UserMessage(models.Model):
     user = models.ForeignKey(User,on_delete=models.CASCADE)
     message = models.TextField()
-    is_stressed = models.BooleanField()
+    is_stressed = models.BooleanField(null=True)
     
     
     def __str__(self) -> str:
