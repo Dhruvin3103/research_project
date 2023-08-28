@@ -5,7 +5,6 @@ from rest_framework import status
 from .serializers import UserMessageSerializer
 from .models import UserMessage
 
-
 class UserMessageAPI(ListCreateAPIView):
     serializer_class = UserMessageSerializer
     queryset = UserMessage.objects.all()
@@ -29,6 +28,7 @@ class UserMessageAPI(ListCreateAPIView):
         
         try:
             serializer = UserMessageSerializer(data=request.data,context={'user': request.user})
+            print(request.data['message'])
             if serializer.is_valid():
                 serializer.save()
                 return Response({
