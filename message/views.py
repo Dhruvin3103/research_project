@@ -1,9 +1,27 @@
 from django.shortcuts import render
-from rest_framework.generics import ListCreateAPIView
+from rest_framework.generics import ListCreateAPIView,GenericAPIView
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import UserMessageSerializer
 from .models import UserMessage
+from user.models import User
+from django.db.models import Avg
+
+class UserIsStressAPI(GenericAPIView):
+    def get(Self,request):
+        try: 
+            user = request.user
+            user_mod_avg = UserMessage.objects.filter(user=user).aggregate(Avg('is_stressed'))
+            print(user.username)
+            return Response({
+                'user':user.username,
+                'stress':user_mod_avg['is_stressed__avg']
+            },status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({
+                'message':'exception',
+                'error': str(e)
+            },status=status.HTTP_501_NOT_IMPLEMENTED)
 
 class UserMessageAPI(ListCreateAPIView):
     serializer_class = UserMessageSerializer
