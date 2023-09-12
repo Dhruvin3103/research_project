@@ -90,7 +90,7 @@ class MessageCSVAPI(GenericAPIView):
         
     
     def get(self, request):
-        # try:
+        try:
             queryset = UserMessage.objects.all()
             serializer = UserMessageCSVSerializer(queryset, many=True)
             data = serializer.data
@@ -114,5 +114,5 @@ class MessageCSVAPI(GenericAPIView):
             )
             csv_url = upload_result['secure_url']
             return Response({'csv_url': csv_url}, status=status.HTTP_201_CREATED)
-        # except Exception as e:
-        #     return Response({"message":'exception',"exception":str(e)}, status=status.HTTP_501_NOT_IMPLEMENTED)
+        except Exception as e:
+            return Response({"message":'exception',"exception":str(e)}, status=status.HTTP_501_NOT_IMPLEMENTED)
