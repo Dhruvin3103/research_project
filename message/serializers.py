@@ -39,3 +39,8 @@ class UserMessageSerializer(serializers.ModelSerializer):
         data['user'] = instance.user.username
         data['is_stressed'] = instance.is_stressed
         return data
+    
+class UserMessageCSVSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserMessage
+        fields = "__all__"
