@@ -5,6 +5,7 @@ from user.models import User
 class UserMessage(models.Model):
     user = models.ForeignKey(User,on_delete=models.CASCADE)
     message = models.TextField()
+    time = models.DateTimeField(auto_now=True)
     is_stressed = models.IntegerField(default=0)
     
     

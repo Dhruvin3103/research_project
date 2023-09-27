@@ -80,7 +80,7 @@ class UserMessageAPI(ListCreateAPIView):
             ,status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class UserMessageCSVAPI(GenericAPIView):
-    # permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser]
     def __init__(self):
         # Create the CSV directory if it doesn't exist
         csv_dir = 'project/csv_files'
@@ -143,7 +143,7 @@ class MessageCSVAPI(GenericAPIView):
                 if not file_exists:
                     writer.writerow(["Timestamp","prompt","response"])  # Write header only if the file is newly created
                 for row in data:
-                    writer.writerow([current_timestamp,row['message'],row['is_stressed']])
+                    writer.writerow([row['time'],row['message'],row['is_stressed']])
 
             upload_result = cloudinary.uploader.upload(
                 file_path, 
