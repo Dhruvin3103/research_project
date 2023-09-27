@@ -78,7 +78,46 @@ class UserMessageAPI(ListCreateAPIView):
                 'exception':str(e),
             }
             ,status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            
+
+class UserMessageCSVAPI(GenericAPIView):
+    # permission_classes = [IsAdminUser]
+    def __init__(self):
+        # Create the CSV directory if it doesn't exist
+        csv_dir = 'project/csv_files'
+        os.makedirs(csv_dir, exist_ok=True)
+        super().__init__()
+        
+    def get(self,request):
+        try:
+            for i in User.objects.all().values():
+                if UserMessage.objects.filter(user_id=i['id']):  
+                    print(i['username'])
+                    print(UserMessage.objects.filter(user=i['id']).aggregate(Avg('is_stressed'))['is_stressed__avg'])
+            filename = f"all_user.csv"
+            file_path = os.path.join("project/csv_files", filename).replace("\\", "/")
+            file_exists = os.path.isfile(file_path)
+            current_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            # Create and write data to the CSV file
+            with open(file_path, mode='w', newline='') as csv_file:
+                writer = csv.writer(csv_file)
+                if not file_exists:
+                    writer.writerow(["Timestamp","user",'average_percentage'])
+                for i in User.objects.all().values():
+                    if UserMessage.objects.filter(user_id=i['id']):
+                        avg = UserMessage.objects.filter(user=i['id']).aggregate(Avg('is_stressed'))['is_stressed__avg']
+                        writer.writerow([current_timestamp,i['username'],avg])
+
+            upload_result = cloudinary.uploader.upload(
+                file_path, 
+                resource_type="raw", 
+                public_id=file_path, 
+                overwrite=True  
+            )
+            csv_url = upload_result['secure_url']
+            return Response({'message':'succuess','url':csv_url})
+        except Exception as e:
+            return Response({"message":'exception',"exception":str(e)}, status=status.HTTP_501_NOT_IMPLEMENTED)
+    
 class MessageCSVAPI(GenericAPIView):
     permission_classes = [IsAdminUser]
     
@@ -97,9 +136,9 @@ class MessageCSVAPI(GenericAPIView):
             filename = f"data_stress.csv"
             file_path = os.path.join("project/csv_files", filename).replace("\\", "/")
             file_exists = os.path.isfile(file_path)
-            current_timestamp = datetime.now().strftime('%Y-%m-%d')
+            current_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             # Create and write data to the CSV file
-            with open(file_path, mode='a', newline='') as csv_file:
+            with open(file_path, mode='w', newline='') as csv_file:
                 writer = csv.writer(csv_file)
                 if not file_exists:
                     writer.writerow(["Timestamp","prompt","response"])  # Write header only if the file is newly created
