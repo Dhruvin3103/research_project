@@ -4,8 +4,8 @@ from rest_framework.generics import ListCreateAPIView,GenericAPIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAdminUser
-from .serializers import UserMessageSerializer,UserMessageCSVSerializer
-from .models import UserMessage
+from .serializers import UserMessageSerializer,FormScoreSerializer
+from .models import UserMessage,FormScore
 from user.models import User
 from django.db.models import Avg
 from datetime import datetime
@@ -57,7 +57,6 @@ class UserMessageAPI(ListCreateAPIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     def post(self,request):
-        
         try:
             serializer = UserMessageSerializer(data=request.data,context={'user': request.user})
             print(request.data['message'])
@@ -79,34 +78,27 @@ class UserMessageAPI(ListCreateAPIView):
             }
             ,status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-class UserMessageCSVAPI(GenericAPIView):
-    permission_classes = [IsAdminUser]
+
+
+class CSVAPI(GenericAPIView):
+    
     def __init__(self):
         # Create the CSV directory if it doesn't exist
         csv_dir = 'project/csv_files'
         os.makedirs(csv_dir, exist_ok=True)
         super().__init__()
-        
+    
     def get(self,request):
         try:
-            for i in User.objects.all().values():
-                if UserMessage.objects.filter(user_id=i['id']):  
-                    print(i['username'])
-                    print(UserMessage.objects.filter(user=i['id']).aggregate(Avg('is_stressed'))['is_stressed__avg'])
-            filename = f"all_user.csv"
+            # file configurations
+            filename = f"form_score.csv"
             file_path = os.path.join("project/csv_files", filename).replace("\\", "/")
-            file_exists = os.path.isfile(file_path)
-            current_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             # Create and write data to the CSV file
             with open(file_path, mode='w', newline='') as csv_file:
                 writer = csv.writer(csv_file)
-                if not file_exists:
-                    writer.writerow(["Timestamp","user",'average_percentage'])
-                for i in User.objects.all().values():
-                    if UserMessage.objects.filter(user_id=i['id']):
-                        avg = UserMessage.objects.filter(user=i['id']).aggregate(Avg('is_stressed'))['is_stressed__avg']
-                        writer.writerow([current_timestamp,i['username'],avg])
-
+                writer.writerow(["Timestamp","user",'form','score'])
+                for i in FormScore.objects.all().values():
+                    writer.writerow([i['time'],User.objects.filter(id=i['user_id']).first().username,i['form'],i['score']])
             upload_result = cloudinary.uploader.upload(
                 file_path, 
                 resource_type="raw", 
@@ -114,44 +106,43 @@ class UserMessageCSVAPI(GenericAPIView):
                 overwrite=True  
             )
             csv_url = upload_result['secure_url']
-            return Response({'message':'succuess','url':csv_url})
-        except Exception as e:
-            return Response({"message":'exception',"exception":str(e)}, status=status.HTTP_501_NOT_IMPLEMENTED)
-    
-class MessageCSVAPI(GenericAPIView):
-    permission_classes = [IsAdminUser]
-    
-    def __init__(self):
-        # Create the CSV directory if it doesn't exist
-        csv_dir = 'project/csv_files'
-        os.makedirs(csv_dir, exist_ok=True)
-        super().__init__()
-        
-    
-    def get(self, request):
-        try:
-            queryset = UserMessage.objects.all()
-            serializer = UserMessageCSVSerializer(queryset, many=True)
-            data = serializer.data
-            filename = f"data_stress.csv"
+            
+            filename = f"all_user.csv"
             file_path = os.path.join("project/csv_files", filename).replace("\\", "/")
-            file_exists = os.path.isfile(file_path)
-            current_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            # Create and write data to the CSV file
             with open(file_path, mode='w', newline='') as csv_file:
                 writer = csv.writer(csv_file)
-                if not file_exists:
-                    writer.writerow(["Timestamp","prompt","response"])  # Write header only if the file is newly created
-                for row in data:
-                    writer.writerow([row['time'],row['message'],row['is_stressed']])
-
+                writer.writerow(["Timestamp","user",'message','is_stressed'])
+                for i in UserMessage.objects.all().values():
+                    writer.writerow([i['time'],User.objects.filter(id=i['user_id']).first().username,i['message'],i['is_stressed']])
             upload_result = cloudinary.uploader.upload(
                 file_path, 
                 resource_type="raw", 
-                public_id=file_path,  # Set the custom filename
-                overwrite=True  # Overwrite if a file with the same name exists
+                public_id=file_path, 
+                overwrite=True  
             )
-            csv_url = upload_result['secure_url']
-            return Response({'csv_url': csv_url}, status=status.HTTP_201_CREATED)
+            csv_url2 = upload_result['secure_url']
+            return Response({'message':'succuess','form_csv':csv_url,'all_message_csv':csv_url2})
+        except Exception as e:
+            return Response({"message":'exception',"exception":str(e)}, status=status.HTTP_501_NOT_IMPLEMENTED)
+        
+
+class FormScoreAPI(ListCreateAPIView):
+    serializer_class = FormScoreSerializer
+    queryset = FormScore.objects.all()
+    
+    def post(self,request):
+        try:
+            serializer = FormScoreSerializer(data=request.data,context={'user': request.user})
+            if serializer.is_valid():
+                serializer.save()
+                return Response({
+                    'message':'success',
+                    "data":serializer.data,
+                    },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'message':'serializer not valid',
+                    'error': serializer.errors
+                },status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"message":'exception',"exception":str(e)}, status=status.HTTP_501_NOT_IMPLEMENTED)

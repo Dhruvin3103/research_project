@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import UserMessage
+from .models import UserMessage,FormScore
 
 import joblib
 import pickle
@@ -44,3 +44,13 @@ class UserMessageCSVSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserMessage
         fields = "__all__"
+        
+class FormScoreSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FormScore
+        fields = ['form','score']
+        
+    def create(self, validated_data):
+        user = self.context.get('user')
+        validated_data['user'] = user
+        return super().create(validated_data)
