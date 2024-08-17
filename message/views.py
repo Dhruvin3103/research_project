@@ -84,7 +84,7 @@ class UserMessageAPI(ListCreateAPIView):
 
 class CSVAPI(GenericAPIView):
     
-    permission_classes = [IsAdminUser]
+    # permission_classes = [IsAdminUser]
     def __init__(self):
         # Create the CSV directory if it doesn't exist
         csv_dir = 'project/csv_files'
